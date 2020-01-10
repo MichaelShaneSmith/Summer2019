@@ -17,10 +17,12 @@ from keras.utils import to_categorical
 import tensorflow as tf
 
 global graph
-from flask import Flask
+from flask import Flask, render_template
+from flask_socketio import SocketIO, emit
 
 graph = tf.get_default_graph()
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 class LSTMModel():
 
@@ -233,6 +235,8 @@ class LSTMModel():
                         print()
         print("total time elapsed", int((time.time() - start_time) / 60), " min")
 
+ids = { }
+
 
 @app.route('/')
 @app.route('/home')
@@ -254,8 +258,39 @@ def train_model():
         return output
 
 
-@app.route('/store/<x>/<y>/<z>')
-def store(x, y, z):
+@app.route('/store/<data>')
+def store(data):
+    print(data)
+
     with open('new_data.csv', 'a+') as f:
-        f.write("{},{},{}\n".format(x, y, z))
-    return "{},{},{}\n".format(x, y, z)
+        data_list = data.split(',')
+        csvWriter = csv.writer(f, delimiter=',')
+        csvWriter.writerow(data_list)
+
+    return str(data_list)
+
+
+# @socketio.on('echo', namespace='/ws')
+# def test_message(message):
+#     emit('my response', {'data': message['ws']})
+
+
+# @socketio.on('broadcast', namespace='/ws')
+# def test_message(message):
+#     emit('my response', {'data': message['data']}, broadcast=True)
+
+
+# @socketio.on('connect', namespace='/ws')
+# def test_connect():
+#     emit('my response', {'data': 'Connected'})
+
+
+# @socketio.on('disconnect', namespace='/ws')
+# def test_disconnect():
+#     print('Client disconnected')
+
+
+if __name__ == '__main__':
+    # app.run(reload=True)
+    app.run(debug=True, host='0.0.0.0')
+    # socketio.run(app)
